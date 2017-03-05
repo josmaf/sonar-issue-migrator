@@ -1,0 +1,10 @@
+org\jmf\vo\Comment.class
+org\jmf\util\HttpUtils$1.class
+org\jmf\vo\Paging.class
+org\jmf\util\FileUtils.class
+org\jmf\vo\JsonIssue.class
+org\jmf\view\CommandLineClient.class
+org\jmf\vo\Rule.class
+org\jmf\services\SonarClientService.class
+org\jmf\util\HttpUtils.class
+org\jmf\vo\Issue.class

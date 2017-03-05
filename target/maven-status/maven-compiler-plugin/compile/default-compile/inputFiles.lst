@@ -1,0 +1,9 @@
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\vo\Issue.java
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\util\HttpUtils.java
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\vo\JsonIssue.java
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\vo\Paging.java
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\vo\Rule.java
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\view\CommandLineClient.java
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\services\SonarClientService.java
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\util\FileUtils.java
+D:\workspace_QA\sonar-issue-migrator\src\main\java\org\jmf\vo\Comment.java
