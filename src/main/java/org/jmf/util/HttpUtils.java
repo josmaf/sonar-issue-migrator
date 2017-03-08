@@ -51,9 +51,9 @@ public final class HttpUtils {
      * @throws MalformedURLException
      */
     public static String getBaseUrl(String sUrl) {        
-        
-        return sUrl == null ? null : (sUrl.split("/")[0] + "//" + sUrl.split("/")[2]);
-        
+       
+            return sUrl == null || "".equals(sUrl) ? null : (sUrl.split("/")[0] + "//" + sUrl.split("/")[2]);
+         
     }
 
     /**

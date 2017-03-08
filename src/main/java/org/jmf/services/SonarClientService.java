@@ -40,32 +40,44 @@ public class SonarClientService {
     private static final String SET_COOKIE = "Set-Cookie";
 
     private static final Logger FILE_LOGGER = LoggerFactory.getLogger("file");
-    
+
     private static final Logger CONSOLE_LOGGER = LoggerFactory.getLogger("console");
 
     private static final String OPEN = "OPEN";
-    
+
     private static final String REOPENED = "REOPENED";
 
     private static final String CONFIRMED = "CONFIRMED";
 
     private static final String RESOLVED = "RESOLVED";
-    
+
     private static final String FALSE_POSITIVE = "FALSE-POSITIVE";
 
     private static final String TRANSITION = "transition";
 
     private final Map<String, String> headers; // Cookie and auth info
 
-    private final String baseUrl;
+    public String baseUrl;
 
     /**
      * Constructor.
      */
     public SonarClientService(String url) {
+             
         this.headers = new ConcurrentHashMap<>();
-        this.baseUrl = HttpUtils.getBaseUrl(url);
+        
+        try {      
+            this.baseUrl = HttpUtils.getBaseUrl(url);
+        } catch (java.lang.ArrayIndexOutOfBoundsException e ) {
+            FILE_LOGGER.error("Error parsing flagges issues URL.", e);
+        }
     }
+   
+    
+    public final String getBaseUrl() {
+        return baseUrl;
+    }
+
 
     /**
      * Connect to login url, get cookie, set cookie and HTTP credentials to
@@ -124,16 +136,16 @@ public class SonarClientService {
         final  Map<String, List<Issue>> issuesByRuleMap = new HashMap<>();
         String rule;
         List<Issue> openIssues;
-        
+
         int nIssues = flaggedIssues.size();
         int counter = 0; 
         int nMatched = 0;
 
         for (final Issue flaggedIssue : flaggedIssues) {
-            
+
             counter++;
             CONSOLE_LOGGER.info("Processing flagged issue {} of {}\r", counter, nIssues);
-            
+
             // search all open issues with the same rule as the flagged issue
             rule = flaggedIssue.getRule();
             if ((openIssues = issuesByRuleMap.get(rule)) == null) {
@@ -153,7 +165,7 @@ public class SonarClientService {
                 updateIssue(matchOpenIssue, flaggedIssue);
             }
         }
-        
+
         CONSOLE_LOGGER.info("\n{} flagged issues matched.", nMatched);        
     }
 

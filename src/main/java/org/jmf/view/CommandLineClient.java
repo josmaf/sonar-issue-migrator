@@ -24,33 +24,42 @@ public final class CommandLineClient {
 
     public static void main(final String... args) {       
        
+       
         // Get map with properties
         Map<String, String> props = FileUtils.getProperties("configuration.properties");
         
         List<Issue> flaggedIssues;
 
         // Create Sonar Client for flagged issues server
-        SonarClientService sclientFlagged = new SonarClientService(props.get("flagged_issues_url"));
+        SonarClientService sClientFlagged = new SonarClientService(props.get("flagged_issues_url"));
+        
+        if (sClientFlagged.getBaseUrl() == null) {
+            CONSOLE_LOGGER.info("No URL found in configuration file for 'flagged' issues server (empty or malformed URL?). Exiting.");
+            return;
+        }
 
-        // Authenticate server
+        // Try to authenticate and get list of issues from server
         CONSOLE_LOGGER.info("Authenticating...\n");
-        if (sclientFlagged.authenticate(props.get("flagged_http_user"), 
-                                        props.get("flagged_http_passw"),
-                                        props.get("flagged_sonar_user"), 
-                                        props.get("flagged_sonar_passw"))) {
-            // If authenticated, get list of flagged issues
+        if (sClientFlagged.authenticate(props.get("flagged_http_user"), props.get("flagged_http_passw"),
+                                        props.get("flagged_sonar_user"), props.get("flagged_sonar_passw"))) {
             CONSOLE_LOGGER.info("Getting list of flagged issues...\n");
-            flaggedIssues = sclientFlagged.getIssuesFromUrl(props.get("flagged_issues_url"));
+            flaggedIssues = sClientFlagged.getIssuesFromUrl(props.get("flagged_issues_url"));
         } else {
-            CONSOLE_LOGGER.info("Authentication failed\n");
+            CONSOLE_LOGGER.info("Authentication failed. Please check credentials in configuration file.\n");
             return;
         }
 
         // If we have obtained a list of flagged issues...
         if (flaggedIssues != null && !flaggedIssues.isEmpty()) {
-            CONSOLE_LOGGER.info("Flagged issues list size: {}\n ",flaggedIssues.size());
+            CONSOLE_LOGGER.info("Flagged issues list size: {}\n ", flaggedIssues.size());
             // Create Sonar Client for open issues
             SonarClientService sClientOpen = new SonarClientService(props.get("open_issues_host"));
+            
+            if (sClientOpen.getBaseUrl() == null) {
+                CONSOLE_LOGGER.info("No URL found in configuration file for open issues server (empty or malformed URL?). Exiting.");
+                return;
+            }
+            
             if (sClientOpen.authenticate(null, null, props.get("open_sonar_user"), props.get("open_sonar_passw"))) {
                 // Copy issues to project
                 sClientOpen.copyIssues(flaggedIssues, props.get("open_issues_project"));
