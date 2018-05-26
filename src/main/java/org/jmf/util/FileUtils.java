@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,7 @@ public final class FileUtils {
     /**
      * Read CSV file.
      * 
-     * @param filePath
+     * @param file
      *            Path of CSV file
      * @return List of arrays of strings
      * @throws IOException
@@ -79,23 +81,26 @@ public final class FileUtils {
 
     /**
      * Return value from properties files given a key.     
-     * @param sKey Property key
      * @param sConfigFileName Config file name
      * @return Value from property file
      */
     public static Map<String, String> getProperties(final String sConfigFileName) {
 
         Map<String, String> propMap = new ConcurrentHashMap<>();
+	    final Properties properties = new Properties();
         
         try (InputStream input = Thread.currentThread().getContextClassLoader().getResourceAsStream(sConfigFileName)) {
             if (input != null) {
                 // load a properties file from class path
-                final Properties properties = new Properties();
-                properties.load(input);           
-                for (final String name: properties.stringPropertyNames()) {
-                    propMap.put(name, properties.getProperty(name));
-                }             
+                properties.load(input);
+            } else {
+				// read from file system
+	            properties.load(new FileInputStream("./src/main/resources/" + sConfigFileName));
             }
+
+	        for (final String name: properties.stringPropertyNames()) {
+		        propMap.put(name, properties.getProperty(name));
+	        }
         } catch (IOException e) {
             FILE_LOGGER.error("Error getting properties from file:", e);
         }

@@ -1,4 +1,4 @@
-package org.jmf.view;
+package org.jmf.client;
 
 import java.util.List;
 import java.util.Map;

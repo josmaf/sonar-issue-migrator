@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jmf</groupId>
 	<artifactId>sonar-issue-migrator</artifactId>
-	<version>0.1.0</version>
+	<version>0.1.1</version>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -20,6 +20,12 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>${slf4jVersion}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
+			<version>4.1</version>
 		</dependency>
 
 		<dependency>
@@ -101,7 +107,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>org.jmf.view.CommandLineClient</mainClass>
+							<mainClass>org.jmf.client.CommandLineClient</mainClass>
 							<classpathPrefix>lib/</classpathPrefix>
 						</manifest>
 						<manifestEntries>
@@ -168,7 +174,7 @@
 		<resources>
 			<resource>
 				<filtering>false</filtering>
-				<directory>${project.basedir}/src/main/resources/conf</directory>
+				<directory>${project.basedir}/src/main/resources</directory>
 				<targetPath>${project.build.directory}/assembly/conf</targetPath>
 				<includes>
 					<include>*.properties</include>

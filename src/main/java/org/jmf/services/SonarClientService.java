@@ -4,13 +4,11 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jmf.util.FileUtils;
 import org.jmf.util.HttpUtils;
@@ -31,7 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class SonarClientService {
 
-    private static final String LOGIN = "sessions/login";
+    private static final String LOGIN = "api/authentication/login";
 
     private static final String API_DO_TRANSITION = "api/issues/do_transition";
 
@@ -55,21 +53,28 @@ public class SonarClientService {
 
     private static final String TRANSITION = "transition";
 
-    private final Map<String, String> headers; // Cookie and auth info
+    private static final String JWT_SESSION = "JWT-SESSION";
 
-    public String baseUrl;
+    private static final String XSRF_TOKEN = "XSRF-TOKEN";
+
+	private static final String X_XSRF_TOKEN = "X-XSRF-TOKEN";
+
+
+    private final MultiValuedMap<String, String> headers; // Cookie and auth info
+
+    private String baseUrl;
 
     /**
      * Constructor.
      */
     public SonarClientService(String url) {
              
-        this.headers = new ConcurrentHashMap<>();
+        this.headers = new ArrayListValuedHashMap<>();
         
         try {      
             this.baseUrl = HttpUtils.getBaseUrl(url);
         } catch (java.lang.ArrayIndexOutOfBoundsException e ) {
-            FILE_LOGGER.error("Error parsing flagges issues URL.", e);
+            FILE_LOGGER.error("Error parsing flagged issues URL.", e);
         }
     }
    
@@ -111,19 +116,28 @@ public class SonarClientService {
             final String loginUrl = this.baseUrl + "/" + LOGIN;
 
             // Launch request to Sonar server
-            final Map<String, String> response = HttpUtils.httpRequest(loginUrl, this.headers, params);
-            if (response != null && 
-                    !response.get("body").contains("Authentication failed") && 
-                    StringUtils.isNotEmpty(response.get(SET_COOKIE))) {
-                this.headers.put("Cookie", response.get(SET_COOKIE));
+            final MultiValuedMap<String, String> response = HttpUtils.httpRequest(loginUrl, this.headers, params);
+            if (response != null && !response.get("body").contains("Authentication failed") ) {
+                setAuthHeaders(response.get(SET_COOKIE));
                 return true;
-            }  
+            }
+
         } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
             FILE_LOGGER.error("Error authenticating", e);
         }
 
         return false;
     }
+
+    private void setAuthHeaders(Collection<String> cookies) {
+		String token = cookies.stream().filter(cookie -> cookie.contains(XSRF_TOKEN)).findFirst().orElse("");
+		String jwt = cookies.stream().filter(cookie -> cookie.contains(JWT_SESSION)).findFirst().orElse("");
+	    this.headers.put(X_XSRF_TOKEN, StringUtils.substringBetween(token, "=", ";"));
+	    this.headers.put("Cookie",jwt);
+
+	    return;
+    }
+
 
     /**
      * Update project's issues based on flagged issues list.
@@ -203,8 +217,9 @@ public class SonarClientService {
             }
 
             // Launch url
-            if (params.size() == 2 && HttpUtils.httpRequest(baseUrl + "/" + API_DO_TRANSITION, this.headers,
-                    params) != null) {  
+            MultiValuedMap<String, String> response = HttpUtils.httpRequest
+                    (baseUrl + "/" + API_DO_TRANSITION, this.headers, params);
+            if (params.size() == 2 && response != null) {
                 return true;
             }
         } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
@@ -223,8 +238,6 @@ public class SonarClientService {
      * 
      * @throws JsonParseException
      *             JSON Exception
-     * @throws JsonMappingExceptionJSON
-     *             Exception
      * @throws IOException
      *             IO Exception
      */
@@ -241,16 +254,20 @@ public class SonarClientService {
         try {
             do {
                 // Launch HTTP GET Request (no parameters)
-                String body = HttpUtils.httpRequest(url + "&pageIndex=" + (pageIndex + 1), this.headers, null)
-                        .get("body");
-                obj = mapper.readValue(body, JsonIssue.class);
+                Collection<String> requestResult = HttpUtils.httpRequest(url + "&pageIndex=" + (pageIndex + 1),
+		                this.headers, null).get("body");
 
-                // Add list of issues extracted from current page
-                issues.addAll(obj.getIssues());
+                if (!requestResult.isEmpty()) {
+                    String body = requestResult.iterator().next();
+                    obj = mapper.readValue(body, JsonIssue.class);
+                    // Add list of issues extracted from current page
+                    issues.addAll(obj.getIssues());
 
-                // Get paging data
-                pageIndex = obj.getPaging().getPageIndex(); // Current page
-            } while (pageIndex < obj.getPaging().getPages());
+                    pageIndex = obj.getPaging().getPageIndex(); // Current page
+                } else {
+                    return null;
+                }
+            } while (issues.size() < obj.getPaging().getTotal() );
         } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
             FILE_LOGGER.error("Error getting issues from URL.", e);
         }

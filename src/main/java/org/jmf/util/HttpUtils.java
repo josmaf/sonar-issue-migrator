@@ -12,10 +12,12 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 import javax.net.ssl.SSLContext;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -61,7 +63,7 @@ public final class HttpUtils {
      * 
      * @param url
      *            Url
-     * @param headers
+     * @param headerMap
      *            HTTP request headers
      * @param params
      *            HTTP Post parameters
@@ -71,16 +73,16 @@ public final class HttpUtils {
      * @throws KeyManagementException
      * @throws IOException
      */
-    public static Map<String, String> httpRequest(String url, Map<String, String> headermap, Map<String, String> params)
+    public static MultiValuedMap<String, String> httpRequest(String url, MultiValuedMap<String, String> headerMap, Map<String, String> params)
             throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException, IOException {
-
-        Map<String, String> responsemap = new ConcurrentHashMap<>();
         
+        MultiValuedMap<String, String> responsemap = new ArrayListValuedHashMap<>();
+
         CloseableHttpClient httpclient = createHttpClient(url);
 
         // Launch HTTP request
-        HttpResponse response = httpclient.execute(getRequest(params, url, headermap));
-       
+        HttpResponse response = httpclient.execute(getRequest(params, url, headerMap));
+
         // Save headers in response
         for (Header header : response.getAllHeaders()) {
             responsemap.put(header.getName(), header.getValue());
@@ -102,7 +104,8 @@ public final class HttpUtils {
      * @return HttpRequestBase 
      * @throws UnsupportedEncodingException
      */
-    private static  HttpRequestBase getRequest(Map<String, String> params, String url, Map<String, String> headermap) 
+    private static  HttpRequestBase getRequest(Map<String, String> params, String url,
+                                                                MultiValuedMap<String, String> headermap)
             throws UnsupportedEncodingException {
 
         HttpRequestBase request;
@@ -120,10 +123,15 @@ public final class HttpUtils {
         }
 
         // Add headers to request
-        if (headermap != null) {
-            for (final Entry<String, String> entry : headermap.entrySet()) {
-                request.addHeader(entry.getKey(), entry.getValue());
+        if (headermap != null && headermap.size() > 0) {
+            for (final Entry<String, String> entry : headermap.entries()) {
+            	request.addHeader(entry.getKey(), entry.getValue());
             }
+
+	        //request.addHeader("Cookie", "username-localhost-8888=\"2|1:0|10:1527188523|23:username-localhost-8888|44:YzU2YjFiZDM1OTQ4NDI1YmFmZTJjYmM4MGJkNTM5Yjk=|2577540cf9f1bf2947f13602b5e309e008aa567cf1d0227f74a6a839085bb27f\"; _xsrf=2|2ce8ba3d|9f6b4f79a28cc1121c794596ebd12101|1527188523; XSRF-TOKEN=irgg5ld4iv5h5fi2rjk0p5erq0; JWT-SESSION=eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJBV09aYTVuR1VnT1prLWd0NUJ6SyIsInN1YiI6ImFkbWluIiwiaWF0IjoxNTI3Mjg3MzU1LCJleHAiOjE1Mjc2MjEwMTYsImxhc3RSZWZyZXNoVGltZSI6MTUyNzI4NzM1NTg0NiwieHNyZlRva2VuIjoiaXJnZzVsZDRpdjVoNWZpMnJqazBwNWVycTAifQ.y9CdVkMEz3bjIlCN45rAtzAEzgEVz4bfEIrXl9kvjzo");
+			//request.addHeader("X-XSRF-TOKEN","irgg5ld4iv5h5fi2rjk0p5erq0");
+
+
         }
 
         return request;
