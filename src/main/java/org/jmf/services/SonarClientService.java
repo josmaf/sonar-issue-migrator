@@ -51,13 +51,15 @@ public class SonarClientService {
 
     private static final String FALSE_POSITIVE = "FALSE-POSITIVE";
 
+    private static final String WONTFIX = "WONTFIX";
+
     private static final String TRANSITION = "transition";
 
     private static final String JWT_SESSION = "JWT-SESSION";
 
     private static final String XSRF_TOKEN = "XSRF-TOKEN";
 
-	private static final String X_XSRF_TOKEN = "X-XSRF-TOKEN";
+    private static final String X_XSRF_TOKEN = "X-XSRF-TOKEN";
 
 
     private final MultiValuedMap<String, String> headers; // Cookie and auth info
@@ -67,12 +69,12 @@ public class SonarClientService {
     /**
      * Constructor.
      */
-    public SonarClientService(String url) {
+    public SonarClientService(String url, String contextRoot) {
              
         this.headers = new ArrayListValuedHashMap<>();
         
         try {      
-            this.baseUrl = HttpUtils.getBaseUrl(url);
+            this.baseUrl = HttpUtils.getBaseUrl(url)+contextRoot;
         } catch (java.lang.ArrayIndexOutOfBoundsException e ) {
             FILE_LOGGER.error("Error parsing flagged issues URL.", e);
         }
@@ -209,8 +211,13 @@ public class SonarClientService {
 
             // Then, set transition
             if (OPEN.equals(openIssue.getStatus()) || REOPENED.equals(openIssue.getStatus())) {
-                if (RESOLVED.equals(flaggedStatus) && FALSE_POSITIVE.equals(resolution)) {
-                    params.put(TRANSITION, "falsepositive");
+                if (RESOLVED.equals(flaggedStatus)){
+                    if(FALSE_POSITIVE.equals(resolution)) {
+                        params.put(TRANSITION, "falsepositive");
+                    } else if(WONTFIX.equals(resolution))
+                    {
+                        params.put(TRANSITION, "wontfix");
+                    }
                 } else if (CONFIRMED.equals(flaggedStatus)) {
                     params.put(TRANSITION, "confirm");
                 }
