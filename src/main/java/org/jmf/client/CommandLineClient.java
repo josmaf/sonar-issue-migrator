@@ -31,7 +31,7 @@ public final class CommandLineClient {
         List<Issue> flaggedIssues;
 
         // Create Sonar Client for flagged issues server
-        SonarClientService sClientFlagged = new SonarClientService(props.get("flagged_issues_url"));
+        SonarClientService sClientFlagged = new SonarClientService(props.get("flagged_issues_url"), props.getOrDefault("flagged_issues_contextroot",""));
         
         if (sClientFlagged.getBaseUrl() == null) {
             CONSOLE_LOGGER.info("No URL found in configuration file for 'flagged' issues server (empty or malformed URL?). Exiting.");
@@ -53,7 +53,7 @@ public final class CommandLineClient {
         if (flaggedIssues != null && !flaggedIssues.isEmpty()) {
             CONSOLE_LOGGER.info("Flagged issues list size: {}\n ", flaggedIssues.size());
             // Create Sonar Client for open issues
-            SonarClientService sClientOpen = new SonarClientService(props.get("open_issues_host"));
+            SonarClientService sClientOpen = new SonarClientService(props.get("open_issues_host"),props.getOrDefault("open_issues_contextroot",""));
             
             if (sClientOpen.getBaseUrl() == null) {
                 CONSOLE_LOGGER.info("No URL found in configuration file for open issues server (empty or malformed URL?). Exiting.");
